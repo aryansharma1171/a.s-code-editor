@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>A.S Code Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body, html {
+            background-color: #1e1e1e;
+            color: white;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        h1 {
+            padding: 10px;
+            font-size: 22px;
+            background-color: #222;
+            text-align: center;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            width: 100%;
+            background: #333;
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .toolbar button {
+            padding: 8px;
+            font-size: 14px;
+            background-color: #007acc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .toolbar button:hover {
+            background-color: #005f99;
+        }
+
+        /* Symbol Toolbar */
+        .symbol-toolbar {
+            width: 100%;
+            background: #444;
+            padding: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            display: flex;
+            gap: 5px;
+            scroll-behavior: smooth;
+            border-bottom: 2px solid #555;
+        }
+
+        .symbol-toolbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .symbol-button {
+            padding: 8px;
+            font-size: 18px;
+            min-width: 40px;
+            height: 40px;
+            text-align: center;
+            background-color: #555;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+
+        .symbol-button:hover {
+            background-color: #777;
+        }
+
+        /* Editor Container */
+        .editor-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        /* Editor Box */
+        .editor-box {
+            flex-grow: 1;
+            border: 2px solid #555;
+            border-radius: 5px;
+            background: #1e1e1e;
+            padding: 5px;
+            height: 60vh;
+            overflow: hidden;
+        }
+
+        /* Full-Screen Output */
+        #outputContainer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            z-index: 100;
+            flex-direction: column;
+        }
+
+        /* Output Toolbar */
+        .output-toolbar {
+            width: 100%;
+            background: #222;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .output-toolbar button {
+            padding: 8px;
+            font-size: 14px;
+            background-color: #007acc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        /* Output Iframe */
+        #output {
+            flex-grow: 1;
+            width: 100%;
+            height: calc(100vh - 50px);
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>A.S Code Editor</h1>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <button onclick="runCode()">Run Code</button>
+        <button onclick="saveFile()">Save</button>
+        <button onclick="document.getElementById('fileInput').click();">Load</button>
+        <button onclick="selectAllCode()">Select All</button>
+        <button onclick="cutCode()">Cut</button>
+    </div>
+
+    <!-- Symbol Toolbar -->
+    <div class="symbol-toolbar" id="symbolToolbar">
+        <button class="symbol-button" onclick="insertSymbol('<')">&lt;</button>
+        <button class="symbol-button" onclick="insertSymbol('>')">&gt;</button>
+        <button class="symbol-button" onclick="insertSymbol('/')">/</button>
+        <button class="symbol-button" onclick="insertSymbol(':')">:</button>
+        <button class="symbol-button" onclick="insertSymbol('{')">{</button>
+        <button class="symbol-button" onclick="insertSymbol('}')">}</button>
+        <button class="symbol-button" onclick="insertSymbol('(')">(</button>
+        <button class="symbol-button" onclick="insertSymbol(')')">)</button>
+    </div>
+
+    <!-- Hidden File Input -->
+    <input type="file" id="fileInput" accept=".html" onchange="loadFile(event)" style="display: none;">
+
+    <!-- Editor -->
+    <div class="editor-container">
+        <div class="editor-box" id="editor"></div>
+    </div>
+
+    <!-- Full-Screen Output -->
+    <div id="outputContainer">
+        <div class="output-toolbar">
+            <button onclick="closeOutput()">Back</button>
+        </div>
+        <iframe id="output"></iframe>
+    </div>
+
+    <!-- Monaco Editor Script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
+    <script>
+        let editor;
+
+        window.onload = function () {
+            require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs" } });
+
+            require(["vs/editor/editor.main"], function () {
+                editor = monaco.editor.create(document.getElementById("editor"), {
+                    value: "<h1>Hello, World!</h1>\n<p>Welcome to A.S Code Editor. Start coding here!</p>",
+                    language: "html",
+                    theme: "vs-dark",
+                    automaticLayout: true,
+                    wordWrap: "on",
+                    minimap: { enabled: false }
+                });
+            });
+        };
+
+        function runCode() {
+            document.getElementById("symbolToolbar").style.display = "none"; // Hide symbol bar
+            document.getElementById("outputContainer").style.display = "flex";
+            const outputFrame = document.getElementById("output");
+            outputFrame.contentWindow.document.open();
+            outputFrame.contentWindow.document.write(editor.getValue());
+            outputFrame.contentWindow.document.close();
+        }
+
+        function closeOutput() {
+            document.getElementById("outputContainer").style.display = "none";
+            document.getElementById("symbolToolbar").style.display = "flex"; // Show symbol bar again
+        }
+
+        function saveFile() {
+            const code = editor.getValue();
+            const blob = new Blob([code], { type: "text/html" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "index.html";
+            a.click();
+        }
+
+        function loadFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                editor.setValue(e.target.result);
+            };
+            reader.readAsText(file);
+        }
+
+        function insertSymbol(symbol) {
+            editor.trigger('keyboard', 'type', { text: symbol });
+        }
+
+        function selectAllCode() {
+            editor.setSelection(editor.getModel().getFullModelRange());
+        }
+
+        function cutCode() {
+            const selection = editor.getSelection();
+            const text = editor.getModel().getValueInRange(selection);
+
+            if (text) {
+                const textarea = document.createElement("textarea");
+                document.body.appendChild(textarea);
+                textarea.value = text;
+                textarea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+
+                editor.executeEdits("", [{ range: selection, text: "" }]);
+                editor.focus();
+            }
+        }
+    </script>
+
+</body>
+</html>
