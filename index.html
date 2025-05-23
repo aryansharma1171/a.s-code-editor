@@ -21,7 +21,6 @@
             flex-direction: column;
         }
 
-        /* Header */
         h1 {
             padding: 10px;
             font-size: 22px;
@@ -29,7 +28,6 @@
             text-align: center;
         }
 
-        /* Toolbar */
         .toolbar {
             width: 100%;
             background: #333;
@@ -54,7 +52,6 @@
             background-color: #005f99;
         }
 
-        /* Symbol Toolbar */
         .symbol-toolbar {
             width: 100%;
             background: #444;
@@ -89,7 +86,6 @@
             background-color: #777;
         }
 
-        /* Editor Container */
         .editor-container {
             flex-grow: 1;
             display: flex;
@@ -97,7 +93,6 @@
             padding: 10px;
         }
 
-        /* Editor Box */
         .editor-box {
             flex-grow: 1;
             border: 2px solid #555;
@@ -108,7 +103,6 @@
             overflow: hidden;
         }
 
-        /* Full-Screen Output */
         #outputContainer {
             display: none;
             position: fixed;
@@ -121,7 +115,6 @@
             flex-direction: column;
         }
 
-        /* Output Toolbar */
         .output-toolbar {
             width: 100%;
             background: #222;
@@ -139,7 +132,6 @@
             border-radius: 5px;
         }
 
-        /* Output Iframe */
         #output {
             flex-grow: 1;
             width: 100%;
@@ -155,7 +147,7 @@
     <!-- Toolbar -->
     <div class="toolbar">
         <button onclick="runCode()">Run Code</button>
-        <button onclick="saveFile()">Save</button>
+        <button onclick="saveFile()">Download</button> <!-- Renamed from Save to Download -->
         <button onclick="document.getElementById('fileInput').click();">Load</button>
         <button onclick="selectAllCode()">Select All</button>
         <button onclick="cutCode()">Cut</button>
@@ -173,15 +165,12 @@
         <button class="symbol-button" onclick="insertSymbol(')')">)</button>
     </div>
 
-    <!-- Hidden File Input -->
     <input type="file" id="fileInput" accept=".html" onchange="loadFile(event)" style="display: none;">
 
-    <!-- Editor -->
     <div class="editor-container">
         <div class="editor-box" id="editor"></div>
     </div>
 
-    <!-- Full-Screen Output -->
     <div id="outputContainer">
         <div class="output-toolbar">
             <button onclick="closeOutput()">Back</button>
@@ -189,7 +178,6 @@
         <iframe id="output"></iframe>
     </div>
 
-    <!-- Monaco Editor Script -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
     <script>
         let editor;
@@ -210,7 +198,7 @@
         };
 
         function runCode() {
-            document.getElementById("symbolToolbar").style.display = "none"; // Hide symbol bar
+            document.getElementById("symbolToolbar").style.display = "none";
             document.getElementById("outputContainer").style.display = "flex";
             const outputFrame = document.getElementById("output");
             outputFrame.contentWindow.document.open();
@@ -220,7 +208,7 @@
 
         function closeOutput() {
             document.getElementById("outputContainer").style.display = "none";
-            document.getElementById("symbolToolbar").style.display = "flex"; // Show symbol bar again
+            document.getElementById("symbolToolbar").style.display = "flex";
         }
 
         function saveFile() {
