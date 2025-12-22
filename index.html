@@ -3,220 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e1e1e">
     <title>A.S Code Editor</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1005/1005141.png">
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
 
         body, html {
             background-color: #1e1e1e;
             color: white;
             height: 100%;
-            overflow: hidden;
+            margin: 0;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         h1 {
             padding: 10px;
-            font-size: 22px;
-            background-color: #222;
+            font-size: 18px;
+            background-color: #252526;
             text-align: center;
+            margin: 0;
+            border-bottom: 1px solid #333;
         }
 
+        /* TOOLBARS */
         .toolbar {
-            width: 100%;
             background: #333;
-            padding: 10px;
+            padding: 8px;
             display: flex;
-            flex-wrap: wrap;
+            gap: 8px;
             justify-content: center;
-            gap: 10px;
         }
 
-        .toolbar button {
-            padding: 8px;
+        button {
+            padding: 8px 12px;
             font-size: 14px;
-            background-color: #007acc;
+            background-color: #0e639c;
             color: white;
             border: none;
             cursor: pointer;
-            border-radius: 5px;
+            border-radius: 4px;
+            font-weight: bold;
         }
-
-        .toolbar button:hover {
-            background-color: #005f99;
-        }
+        button:active { transform: scale(0.95); }
 
         .symbol-toolbar {
-            width: 100%;
-            background: #444;
-            padding: 8px;
+            background: #2d2d2d;
+            padding: 5px;
             overflow-x: auto;
             white-space: nowrap;
             display: flex;
-            gap: 5px;
-            scroll-behavior: smooth;
-            border-bottom: 2px solid #555;
+            gap: 8px;
         }
-
-        .symbol-toolbar::-webkit-scrollbar {
-            display: none;
-        }
-
-        .symbol-button {
-            padding: 8px;
-            font-size: 18px;
+        
+        .symbol-btn {
+            background: #444;
             min-width: 40px;
-            height: 40px;
-            text-align: center;
-            background-color: #555;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            flex: 0 0 auto;
+            height: 35px;
+            font-family: monospace;
+            font-size: 16px;
         }
 
-        .symbol-button:hover {
-            background-color: #777;
-        }
-
+        /* EDITOR AREA */
         .editor-container {
             flex-grow: 1;
+            position: relative;
             display: flex;
-            flex-direction: column;
-            padding: 10px;
         }
 
-        .editor-box {
-            flex-grow: 1;
-            border: 2px solid #555;
-            border-radius: 5px;
-            background: #1e1e1e;
-            padding: 5px;
-            height: 60vh;
-            overflow: hidden;
+        /* This replaces Monaco for Offline Use */
+        #editor {
+            width: 100%;
+            height: 100%;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            white-space: pre;
+            overflow: auto;
         }
 
+        /* OUTPUT SCREEN */
         #outputContainer {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             background: white;
             z-index: 100;
             flex-direction: column;
         }
-
-        .output-toolbar {
-            width: 100%;
+        
+        #outputHeader {
             background: #222;
             padding: 10px;
-            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .output-toolbar button {
-            padding: 8px;
-            font-size: 14px;
-            background-color: #007acc;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        #output {
-            flex-grow: 1;
-            width: 100%;
-            height: calc(100vh - 50px);
-            border: none;
-        }
+        iframe { border: none; flex-grow: 1; width: 100%; }
     </style>
 </head>
 <body>
 
-    <h1>A.S Code Editor</h1>
+    <h1>A.S Code Editor (Offline Mode)</h1>
 
-    <!-- Toolbar -->
     <div class="toolbar">
-        <button onclick="runCode()">Run Code</button>
-        <button onclick="saveFile()">Download</button> <!-- Renamed from Save to Download -->
-        <button onclick="document.getElementById('fileInput').click();">Load</button>
-        <button onclick="selectAllCode()">Select All</button>
-        <button onclick="cutCode()">Cut</button>
+        <button onclick="runCode()">▶ Run</button>
+        <button onclick="saveFile()">⬇ Save</button>
+        <button onclick="document.getElementById('fileInput').click()">📂 Open</button>
+        <button onclick="copyAll()">✂ Copy</button>
     </div>
 
-    <!-- Symbol Toolbar -->
-    <div class="symbol-toolbar" id="symbolToolbar">
-        <button class="symbol-button" onclick="insertSymbol('<')">&lt;</button>
-        <button class="symbol-button" onclick="insertSymbol('>')">&gt;</button>
-        <button class="symbol-button" onclick="insertSymbol('/')">/</button>
-        <button class="symbol-button" onclick="insertSymbol(':')">:</button>
-        <button class="symbol-button" onclick="insertSymbol('{')">{</button>
-        <button class="symbol-button" onclick="insertSymbol('}')">}</button>
-        <button class="symbol-button" onclick="insertSymbol('(')">(</button>
-        <button class="symbol-button" onclick="insertSymbol(')')">)</button>
+    <div class="symbol-toolbar">
+        <button class="symbol-btn" onclick="insert('<')">&lt;</button>
+        <button class="symbol-btn" onclick="insert('>')">&gt;</button>
+        <button class="symbol-btn" onclick="insert('/')">/</button>
+        <button class="symbol-btn" onclick="insert('=')">=</button>
+        <button class="symbol-btn" onclick="insert('"')">"</button>
+        <button class="symbol-btn" onclick="insert('{')">{</button>
+        <button class="symbol-btn" onclick="insert('}')">}</button>
+        <button class="symbol-btn" onclick="insert(';')">;</button>
     </div>
 
-    <input type="file" id="fileInput" accept=".html" onchange="loadFile(event)" style="display: none;">
+    <input type="file" id="fileInput" accept=".html,.txt,.js,.css" onchange="loadFile(event)" style="display: none;">
 
     <div class="editor-container">
-        <div class="editor-box" id="editor"></div>
+        <textarea id="editor" spellcheck="false" placeholder="Write your HTML code here..."><h1>Hello World!</h1>
+<p>This editor works offline.</p></textarea>
     </div>
 
     <div id="outputContainer">
-        <div class="output-toolbar">
-            <button onclick="closeOutput()">Back</button>
+        <div id="outputHeader">
+            <span style="color:white; font-weight:bold;">Preview</span>
+            <button onclick="closeOutput()" style="background:#c0392b;">✖ Close</button>
         </div>
-        <iframe id="output"></iframe>
+        <iframe id="outputFrame"></iframe>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
     <script>
-        let editor;
-
-        window.onload = function () {
-            require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs" } });
-
-            require(["vs/editor/editor.main"], function () {
-                editor = monaco.editor.create(document.getElementById("editor"), {
-                    value: "<h1>Hello, World!</h1>\n<p>Welcome to A.S Code Editor. Start coding here!</p>",
-                    language: "html",
-                    theme: "vs-dark",
-                    automaticLayout: true,
-                    wordWrap: "on",
-                    minimap: { enabled: false }
-                });
-            });
-        };
+        // --- EDITOR LOGIC ---
+        const editor = document.getElementById("editor");
 
         function runCode() {
-            document.getElementById("symbolToolbar").style.display = "none";
-            document.getElementById("outputContainer").style.display = "flex";
-            const outputFrame = document.getElementById("output");
-            outputFrame.contentWindow.document.open();
-            outputFrame.contentWindow.document.write(editor.getValue());
-            outputFrame.contentWindow.document.close();
+            const code = editor.value;
+            const outputContainer = document.getElementById("outputContainer");
+            const frame = document.getElementById("outputFrame");
+            
+            outputContainer.style.display = "flex";
+            frame.contentWindow.document.open();
+            frame.contentWindow.document.write(code);
+            frame.contentWindow.document.close();
         }
 
         function closeOutput() {
             document.getElementById("outputContainer").style.display = "none";
-            document.getElementById("symbolToolbar").style.display = "flex";
         }
 
         function saveFile() {
-            const code = editor.getValue();
-            const blob = new Blob([code], { type: "text/html" });
+            const blob = new Blob([editor.value], { type: "text/html" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = "index.html";
+            a.download = "my-code.html";
             a.click();
         }
 
@@ -225,34 +186,35 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function (e) {
-                editor.setValue(e.target.result);
+                editor.value = e.target.result;
             };
             reader.readAsText(file);
         }
 
-        function insertSymbol(symbol) {
-            editor.trigger('keyboard', 'type', { text: symbol });
+        function copyAll() {
+            editor.select();
+            document.execCommand("copy");
+            alert("Code copied to clipboard!");
         }
 
-        function selectAllCode() {
-            editor.setSelection(editor.getModel().getFullModelRange());
+        // Insert symbol at cursor position (Important for Textarea)
+        function insert(text) {
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            const value = editor.value;
+            
+            editor.value = value.substring(0, start) + text + value.substring(end);
+            editor.selectionStart = editor.selectionEnd = start + text.length;
+            editor.focus();
         }
 
-        function cutCode() {
-            const selection = editor.getSelection();
-            const text = editor.getModel().getValueInRange(selection);
-
-            if (text) {
-                const textarea = document.createElement("textarea");
-                document.body.appendChild(textarea);
-                textarea.value = text;
-                textarea.select();
-                document.execCommand("copy");
-                document.body.removeChild(textarea);
-
-                editor.executeEdits("", [{ range: selection, text: "" }]);
-                editor.focus();
-            }
+        // --- OFFLINE SERVICE WORKER REGISTRATION ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Registered'))
+                    .catch(err => console.log('Error:', err));
+            });
         }
     </script>
 
