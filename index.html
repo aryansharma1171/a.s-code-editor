@@ -262,6 +262,16 @@
     <input type="color" id="colorPickerInput" onchange="insertColor(this)">
 
     <script>
+        // --- SERVICE WORKER REGISTRATION (AUTO-UPDATES) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered'))
+                    .catch(err => console.log('SW Failed', err));
+            });
+        }
+
+        // --- EDITOR LOGIC ---
         const editor = document.getElementById("editor");
         const gutter = document.getElementById("gutter");
         const previewContainer = document.getElementById("previewContainer");
@@ -306,6 +316,7 @@
             }, 2000);
         }
 
+        // --- MODAL LOGIC ---
         function openSnippets() { 
             document.getElementById("overlay").style.display = "block"; 
             document.getElementById("templateModal").style.display = "block"; 
@@ -317,6 +328,7 @@
             document.getElementById("contactModal").style.display = "none";
         }
 
+        // --- RUN LOGIC ---
         function toggleRun() {
             if (previewContainer.style.display === "flex") {
                 previewContainer.style.display = "none";
