@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     <meta name="theme-color" content="#1e1e1e">
     <title>A.S Code</title>
     
@@ -25,7 +25,8 @@
         body, html {
             background-color: var(--bg); 
             color: var(--text);
-            height: 100%; 
+            /* FIX: 100dvh adapts to mobile browser bars dynamically */
+            height: 100dvh; 
             width: 100%;
             margin: 0; 
             padding: 0;
@@ -49,7 +50,6 @@
         }
 
         .brand { font-weight: 700; color: #fff; font-size: 16px; letter-spacing: 0.5px; }
-
         .toolbar-group { display: flex; gap: 5px; }
 
         .btn {
@@ -109,7 +109,7 @@
             height: 100%;
         }
 
-        /* --- HELPER BAR --- */
+        /* --- HELPER BAR (Fixed for Keyboard) --- */
         .helper-bar {
             background: var(--sidebar); 
             padding: 8px 5px; 
@@ -120,6 +120,8 @@
             flex-shrink: 0; 
             z-index: 20;
             width: 100%;
+            /* Ensure it sits above iOS home bar */
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
         
         .helper-btn {
@@ -164,7 +166,7 @@
         .log-error { color: var(--error); }
         .log-info { color: #4fc1ff; }
 
-        /* --- MODALS (Shared Styles) --- */
+        /* --- MODALS --- */
         .modal {
             display: none; position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%); background: #252526;
@@ -174,8 +176,6 @@
         .snippet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .snippet-btn { background: #333; color: #ccc; border: 1px solid #444; padding: 10px; border-radius: 4px; cursor: pointer; text-align: left; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 5900; }
-
-        /* Hidden Input */
         #colorPickerInput { visibility: hidden; width: 0; height: 0; position: absolute; }
     </style>
 </head>
@@ -183,7 +183,6 @@
 
     <header>
         <div class="brand">A.S Code</div>
-        
         <div class="toolbar-group">
             <button class="btn btn-icon" onclick="contactUs()" title="Contact Us">📧</button>
             <button class="btn btn-icon" onclick="openSnippets()">⚡</button>
@@ -262,16 +261,13 @@
     <input type="color" id="colorPickerInput" onchange="insertColor(this)">
 
     <script>
-        // --- SERVICE WORKER REGISTRATION (AUTO-UPDATES) ---
+        // --- SERVICE WORKER REGISTRATION ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW Registered'))
-                    .catch(err => console.log('SW Failed', err));
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
             });
         }
 
-        // --- EDITOR LOGIC ---
         const editor = document.getElementById("editor");
         const gutter = document.getElementById("gutter");
         const previewContainer = document.getElementById("previewContainer");
@@ -289,6 +285,7 @@
             localStorage.setItem("as-code-fixed", editor.value);
         });
 
+        // Sync Scroll
         editor.addEventListener("scroll", () => { gutter.scrollTop = editor.scrollTop; });
         editor.addEventListener("keydown", (e) => { if (e.key === "Tab") { e.preventDefault(); insert("    "); } });
 
@@ -297,38 +294,31 @@
             gutter.innerHTML = Array(lines).fill(0).map((_, i) => i + 1).join("<br>");
         }
 
-        // --- CONTACT LOGIC ---
+        // --- CONTACT ---
         function contactUs() {
             document.getElementById("overlay").style.display = "block";
             document.getElementById("contactModal").style.display = "block";
         }
-
         function copyEmail(btn) {
             navigator.clipboard.writeText("etho98g@gmail.com");
             const originalText = btn.innerText;
             btn.innerText = "✓ Copied!";
             btn.style.background = "#28a745";
-            btn.style.borderColor = "#28a745";
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.background = "#007acc";
-                btn.style.borderColor = "#007acc";
-            }, 2000);
+            setTimeout(() => { btn.innerText = originalText; btn.style.background = "#007acc"; }, 2000);
         }
 
-        // --- MODAL LOGIC ---
+        // --- MODALS ---
         function openSnippets() { 
             document.getElementById("overlay").style.display = "block"; 
             document.getElementById("templateModal").style.display = "block"; 
         }
-
         function closeAllModals() {
             document.getElementById("overlay").style.display = "none";
             document.getElementById("templateModal").style.display = "none";
             document.getElementById("contactModal").style.display = "none";
         }
 
-        // --- RUN LOGIC ---
+        // --- RUN ---
         function toggleRun() {
             if (previewContainer.style.display === "flex") {
                 previewContainer.style.display = "none";
@@ -337,22 +327,14 @@
                 runCode();
             }
         }
-
         function runCode() {
             consoleArea.innerHTML = "";
             const code = editor.value;
-            const consoleScript = `
-                <script>
-                    window.onerror = function(msg, url, line) { 
-                        window.parent.postMessage({type: 'error', msg: msg + " (Line " + line + ")"}, '*'); 
-                    };
+            const consoleScript = `<script>
+                    window.onerror = function(msg, url, line) { window.parent.postMessage({type: 'error', msg: msg + " (Line " + line + ")"}, '*'); };
                     const originalLog = console.log;
-                    console.log = function(...args) {
-                        originalLog.apply(console, args);
-                        window.parent.postMessage({type: 'log', msg: args.join(" ")}, '*');
-                    };
-                <\/script>
-            `;
+                    console.log = function(...args) { originalLog.apply(console, args); window.parent.postMessage({type: 'log', msg: args.join(" ")}, '*'); };
+                <\/script>`;
             frame.contentWindow.document.open();
             frame.contentWindow.document.write(consoleScript + code);
             frame.contentWindow.document.close();
