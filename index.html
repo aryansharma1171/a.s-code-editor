@@ -2,182 +2,411 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1e1e1e">
-    <title>A.S Code Editor</title>
+    <title>A.S Code</title>
     
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1005/1005141.png">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        :root {
+            --bg: #1e1e1e;
+            --sidebar: #252526;
+            --accent: #007acc;
+            --text: #cccccc;
+            --border: #333;
+            --console-bg: #111;
+            --error: #f48771;
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
 
         body, html {
-            background-color: #1e1e1e;
-            color: white;
-            height: 100%;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        h1 {
-            padding: 10px;
-            font-size: 18px;
-            background-color: #252526;
-            text-align: center;
-            margin: 0;
-            border-bottom: 1px solid #333;
-        }
-
-        /* TOOLBARS */
-        .toolbar {
-            background: #333;
-            padding: 8px;
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        button {
-            padding: 8px 12px;
-            font-size: 14px;
-            background-color: #0e639c;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        button:active { transform: scale(0.95); }
-
-        .symbol-toolbar {
-            background: #2d2d2d;
-            padding: 5px;
-            overflow-x: auto;
-            white-space: nowrap;
-            display: flex;
-            gap: 8px;
-        }
-        
-        .symbol-btn {
-            background: #444;
-            min-width: 40px;
-            height: 35px;
-            font-family: monospace;
-            font-size: 16px;
-        }
-
-        /* EDITOR AREA */
-        .editor-container {
-            flex-grow: 1;
-            position: relative;
-            display: flex;
-        }
-
-        /* This replaces Monaco for Offline Use */
-        #editor {
+            background-color: var(--bg); 
+            color: var(--text);
+            height: 100%; 
             width: 100%;
-            height: 100%;
-            background-color: #1e1e1e;
-            color: #d4d4d4;
-            border: none;
-            padding: 15px;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            resize: none;
-            outline: none;
-            white-space: pre;
-            overflow: auto;
+            margin: 0; 
+            padding: 0;
+            display: flex; 
+            flex-direction: column;
+            font-family: 'Segoe UI', sans-serif; 
+            overflow: hidden; 
         }
 
-        /* OUTPUT SCREEN */
-        #outputContainer {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            z-index: 100;
-            flex-direction: column;
-        }
-        
-        #outputHeader {
-            background: #222;
-            padding: 10px;
-            display: flex;
+        /* --- HEADER --- */
+        header {
+            background-color: var(--sidebar); 
+            height: 50px;
+            display: flex; 
+            align-items: center; 
             justify-content: space-between;
-            align-items: center;
+            padding: 0 10px; 
+            border-bottom: 1px solid var(--border); 
+            flex-shrink: 0; 
+            z-index: 20;
         }
 
-        iframe { border: none; flex-grow: 1; width: 100%; }
+        .brand { font-weight: 700; color: #fff; font-size: 16px; letter-spacing: 0.5px; }
+
+        .toolbar-group { display: flex; gap: 5px; }
+
+        .btn {
+            background: #333; color: #eee; border: 1px solid #444;
+            height: 34px; padding: 0 10px; font-size: 14px; cursor: pointer;
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-primary { background-color: var(--accent); border-color: #005f9e; color: white; font-weight: bold; }
+        .btn-icon { width: 34px; padding: 0; font-size: 16px; }
+
+        /* --- SEARCH BAR --- */
+        #searchBar {
+            display: none; background: #2d2d2d; padding: 8px;
+            border-bottom: 1px solid var(--border); justify-content: center; gap: 5px;
+            flex-shrink: 0;
+        }
+        #searchInput { background: #1e1e1e; border: 1px solid #444; color: white; padding: 5px; border-radius: 3px; width: 60%; }
+
+        /* --- WORKSPACE --- */
+        .workspace { 
+            display: flex; 
+            flex-grow: 1; 
+            position: relative; 
+            height: 100%; 
+            min-height: 0; 
+            overflow: hidden; 
+        }
+
+        .gutter {
+            width: 40px; 
+            background: var(--bg); 
+            color: #6e7681;
+            text-align: right; 
+            padding: 10px 5px; 
+            font-family: 'Fira Code', monospace;
+            font-size: 14px; 
+            line-height: 1.5; 
+            border-right: 1px solid var(--border);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        #editor {
+            flex-grow: 1; 
+            background: var(--bg); 
+            color: #d4d4d4;
+            border: none; 
+            padding: 10px; 
+            font-family: 'Fira Code', monospace;
+            font-size: 14px; 
+            line-height: 1.5; 
+            resize: none; 
+            white-space: pre;
+            overflow: auto; 
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- HELPER BAR --- */
+        .helper-bar {
+            background: var(--sidebar); 
+            padding: 8px 5px; 
+            display: flex; 
+            gap: 8px;
+            overflow-x: auto; 
+            border-top: 1px solid var(--border); 
+            flex-shrink: 0; 
+            z-index: 20;
+            width: 100%;
+        }
+        
+        .helper-btn {
+            background: #3e3e42; color: #fff; border: none; min-width: 45px; height: 40px;
+            border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 16px;
+            cursor: pointer;
+        }
+        .helper-btn:active { background: var(--accent); }
+
+        /* --- PREVIEW --- */
+        #previewContainer {
+            display: none; 
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: white;
+            flex-direction: column;
+            z-index: 5000;
+        }
+
+        .preview-tabs {
+            background: #f0f0f0; display: flex; border-bottom: 1px solid #ccc; height: 45px; align-items: center;
+        }
+        .tab-btn {
+            padding: 0 20px; height: 100%; border: none; background: transparent; 
+            font-weight: bold; cursor: pointer; color: #555; border-bottom: 3px solid transparent;
+        }
+        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .close-btn { 
+            margin-left: auto; background: #ff4d4d; color: white; 
+            padding: 0 20px; height: 100%; cursor: pointer; border: none; font-weight: bold;
+        }
+
+        #outputFrame { border: none; flex-grow: 1; width: 100%; background: white; display: block; }
+        
+        #consoleArea {
+            display: none; flex-grow: 1; background: var(--console-bg); 
+            color: #ddd; padding: 10px; font-family: 'Fira Code', monospace; 
+            font-size: 13px; overflow-y: auto;
+        }
+        .log-msg { padding: 5px 0; border-bottom: 1px solid #333; }
+        .log-error { color: var(--error); }
+        .log-info { color: #4fc1ff; }
+
+        /* --- MODALS (Shared Styles) --- */
+        .modal {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: #252526;
+            border: 1px solid #454545; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            width: 90%; max-width: 400px; z-index: 6000; border-radius: 8px; padding: 20px;
+        }
+        .snippet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .snippet-btn { background: #333; color: #ccc; border: 1px solid #444; padding: 10px; border-radius: 4px; cursor: pointer; text-align: left; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 5900; }
+
+        /* Hidden Input */
+        #colorPickerInput { visibility: hidden; width: 0; height: 0; position: absolute; }
     </style>
 </head>
 <body>
 
-    <h1>A.S Code Editor (Offline Mode)</h1>
+    <header>
+        <div class="brand">A.S Code</div>
+        
+        <div class="toolbar-group">
+            <button class="btn btn-icon" onclick="contactUs()" title="Contact Us">📧</button>
+            <button class="btn btn-icon" onclick="openSnippets()">⚡</button>
+            <button class="btn btn-icon" onclick="document.execCommand('undo')">↩️</button>
+            <button class="btn btn-icon" onclick="toggleSearch()">🔍</button>
+            <button class="btn btn-icon" onclick="document.getElementById('colorPickerInput').click()">🎨</button>
+            <button class="btn btn-primary" onclick="toggleRun()">▶ RUN</button>
+            <button class="btn btn-icon" onclick="saveFile()">💾</button>
+            <button class="btn btn-icon" onclick="document.getElementById('fileInput').click()">📂</button>
+        </div>
+    </header>
 
-    <div class="toolbar">
-        <button onclick="runCode()">▶ Run</button>
-        <button onclick="saveFile()">⬇ Save</button>
-        <button onclick="document.getElementById('fileInput').click()">📂 Open</button>
-        <button onclick="copyAll()">✂ Copy</button>
+    <div id="searchBar">
+        <input type="text" id="searchInput" placeholder="Find text...">
+        <button class="btn" onclick="findText()">Find</button>
+        <button class="btn" onclick="toggleSearch()">✖</button>
     </div>
 
-    <div class="symbol-toolbar">
-        <button class="symbol-btn" onclick="insert('<')">&lt;</button>
-        <button class="symbol-btn" onclick="insert('>')">&gt;</button>
-        <button class="symbol-btn" onclick="insert('/')">/</button>
-        <button class="symbol-btn" onclick="insert('=')">=</button>
-        <button class="symbol-btn" onclick="insert('"')">"</button>
-        <button class="symbol-btn" onclick="insert('{')">{</button>
-        <button class="symbol-btn" onclick="insert('}')">}</button>
-        <button class="symbol-btn" onclick="insert(';')">;</button>
+    <div class="workspace" id="workspace">
+        <div class="gutter" id="gutter">1</div>
+        <textarea id="editor" spellcheck="false" placeholder="<h1>Start Coding...</h1>"></textarea>
     </div>
 
-    <input type="file" id="fileInput" accept=".html,.txt,.js,.css" onchange="loadFile(event)" style="display: none;">
-
-    <div class="editor-container">
-        <textarea id="editor" spellcheck="false" placeholder="Write your HTML code here..."><h1>Hello World!</h1>
-<p>This editor works offline.</p></textarea>
+    <div class="helper-bar">
+        <button class="helper-btn" onclick="insert('<')">&lt;</button>
+        <button class="helper-btn" onclick="insert('>')">&gt;</button>
+        <button class="helper-btn" onclick="insert('/')">/</button>
+        <button class="helper-btn" onclick="insert('=')">=</button>
+        <button class="helper-btn" onclick="insert('"')">"</button>
+        <button class="helper-btn" onclick="insert(';')">;</button>
+        <button class="helper-btn" onclick="insert('{')">{</button>
+        <button class="helper-btn" onclick="insert('}')">}</button>
+        <button class="helper-btn" onclick="insert('class=')">cls</button>
+        <button class="helper-btn" onclick="insert('id=')">id</button>
+        <button class="helper-btn" onclick="insert('!')">!</button>
+        <button class="helper-btn" onclick="insert('px')">px</button>
     </div>
 
-    <div id="outputContainer">
-        <div id="outputHeader">
-            <span style="color:white; font-weight:bold;">Preview</span>
-            <button onclick="closeOutput()" style="background:#c0392b;">✖ Close</button>
+    <div id="previewContainer">
+        <div class="preview-tabs">
+            <button class="tab-btn active" onclick="switchTab('result')">🌐 Result</button>
+            <button class="tab-btn" onclick="switchTab('console')">🐞 Console</button>
+            <button class="close-btn" onclick="toggleRun()">✖ CLOSE</button>
         </div>
         <iframe id="outputFrame"></iframe>
+        <div id="consoleArea"></div>
     </div>
 
+    <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
+
+    <div class="modal" id="templateModal">
+        <h3 style="color:white; margin:0 0 10px 0;">Insert Template</h3>
+        <div class="snippet-grid">
+            <button class="snippet-btn" onclick="insertSnippet('html')">🌐 HTML5 Base</button>
+            <button class="snippet-btn" onclick="insertSnippet('css')">🎨 CSS Reset</button>
+            <button class="snippet-btn" onclick="insertSnippet('nav')">🗺️ Navbar</button>
+            <button class="snippet-btn" onclick="insertSnippet('card')">🃏 Card UI</button>
+            <button class="snippet-btn" onclick="insertSnippet('btn')">🔘 Button</button>
+            <button class="snippet-btn" onclick="insertSnippet('js')">⚙️ JS Script</button>
+        </div>
+        <button onclick="closeAllModals()" style="margin-top:10px; width:100%; padding:8px; cursor:pointer; background:#444; color:white; border:none;">Cancel</button>
+    </div>
+
+    <div class="modal" id="contactModal">
+        <h3 style="color:white; margin:0 0 15px 0;">📧 Contact Support</h3>
+        <div style="background:#1e1e1e; padding:12px; border:1px solid #444; border-radius:4px; margin-bottom:15px; color:#fff; word-break: break-all; text-align:center; font-family:'Fira Code', monospace;">
+            etho98g@gmail.com
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="snippet-btn" style="flex:1; text-align:center; background:#007acc; border-color:#007acc; color:white; font-weight:bold;" onclick="copyEmail(this)">Copy</button>
+            <button class="snippet-btn" style="flex:1; text-align:center;" onclick="closeAllModals()">Close</button>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".html,.txt,.js,.css" onchange="loadFile(event)" style="display:none;">
+    <input type="color" id="colorPickerInput" onchange="insertColor(this)">
+
     <script>
-        // --- EDITOR LOGIC ---
         const editor = document.getElementById("editor");
+        const gutter = document.getElementById("gutter");
+        const previewContainer = document.getElementById("previewContainer");
+        const frame = document.getElementById("outputFrame");
+        const consoleArea = document.getElementById("consoleArea");
+
+        window.onload = function() {
+            const saved = localStorage.getItem("as-code-fixed");
+            if (saved) editor.value = saved;
+            updateUI();
+        };
+
+        editor.addEventListener("input", () => {
+            updateUI();
+            localStorage.setItem("as-code-fixed", editor.value);
+        });
+
+        editor.addEventListener("scroll", () => { gutter.scrollTop = editor.scrollTop; });
+        editor.addEventListener("keydown", (e) => { if (e.key === "Tab") { e.preventDefault(); insert("    "); } });
+
+        function updateUI() {
+            const lines = editor.value.split("\n").length;
+            gutter.innerHTML = Array(lines).fill(0).map((_, i) => i + 1).join("<br>");
+        }
+
+        // --- CONTACT LOGIC ---
+        function contactUs() {
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("contactModal").style.display = "block";
+        }
+
+        function copyEmail(btn) {
+            navigator.clipboard.writeText("etho98g@gmail.com");
+            const originalText = btn.innerText;
+            btn.innerText = "✓ Copied!";
+            btn.style.background = "#28a745";
+            btn.style.borderColor = "#28a745";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "#007acc";
+                btn.style.borderColor = "#007acc";
+            }, 2000);
+        }
+
+        function openSnippets() { 
+            document.getElementById("overlay").style.display = "block"; 
+            document.getElementById("templateModal").style.display = "block"; 
+        }
+
+        function closeAllModals() {
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("templateModal").style.display = "none";
+            document.getElementById("contactModal").style.display = "none";
+        }
+
+        function toggleRun() {
+            if (previewContainer.style.display === "flex") {
+                previewContainer.style.display = "none";
+            } else {
+                previewContainer.style.display = "flex";
+                runCode();
+            }
+        }
 
         function runCode() {
+            consoleArea.innerHTML = "";
             const code = editor.value;
-            const outputContainer = document.getElementById("outputContainer");
-            const frame = document.getElementById("outputFrame");
-            
-            outputContainer.style.display = "flex";
+            const consoleScript = `
+                <script>
+                    window.onerror = function(msg, url, line) { 
+                        window.parent.postMessage({type: 'error', msg: msg + " (Line " + line + ")"}, '*'); 
+                    };
+                    const originalLog = console.log;
+                    console.log = function(...args) {
+                        originalLog.apply(console, args);
+                        window.parent.postMessage({type: 'log', msg: args.join(" ")}, '*');
+                    };
+                <\/script>
+            `;
             frame.contentWindow.document.open();
-            frame.contentWindow.document.write(code);
+            frame.contentWindow.document.write(consoleScript + code);
             frame.contentWindow.document.close();
         }
 
-        function closeOutput() {
-            document.getElementById("outputContainer").style.display = "none";
+        window.addEventListener('message', function(e) {
+            if (e.data.type === 'log') {
+                const div = document.createElement('div');
+                div.className = 'log-msg log-info'; div.textContent = "> " + e.data.msg;
+                consoleArea.appendChild(div);
+            } else if (e.data.type === 'error') {
+                const div = document.createElement('div');
+                div.className = 'log-msg log-error'; div.textContent = "❌ " + e.data.msg;
+                consoleArea.appendChild(div);
+            }
+        });
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            if (tab === 'result') { frame.style.display = 'block'; consoleArea.style.display = 'none'; }
+            else { frame.style.display = 'none'; consoleArea.style.display = 'block'; }
+        }
+        
+        const snippets = {
+            html: `<!DOCTYPE html>\n<html>\n<head>\n<style>\n  body{ padding:20px; font-family:sans-serif; }\n</style>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>`,
+            css: `* { margin:0; box-sizing:border-box; }`,
+            nav: `<nav style="background:#333; color:white; padding:10px;">Menu</nav>`,
+            card: `<div style="border:1px solid #ddd; padding:10px; border-radius:5px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">\n  <h3>Title</h3>\n  <p>Content...</p>\n</div>`,
+            btn: `<button style="background:#007acc; color:white; padding:8px 16px; border:none; border-radius:4px;">Click Me</button>`,
+            js: `<script>\n  console.log('App Ready');\n<\/script>`
+        };
+        function insertSnippet(k) { insert(snippets[k]); closeAllModals(); }
+
+        function insertColor(input) { insert(input.value); }
+
+        function toggleSearch() {
+            const bar = document.getElementById("searchBar");
+            bar.style.display = bar.style.display === "flex" ? "none" : "flex";
+            if(bar.style.display === "flex") document.getElementById("searchInput").focus();
+        }
+
+        function findText() {
+            const query = document.getElementById("searchInput").value;
+            if (!query) return;
+            const index = editor.value.indexOf(query, editor.selectionEnd);
+            if (index !== -1) { editor.focus(); editor.setSelectionRange(index, index + query.length); }
+            else { alert("Not found"); }
+        }
+
+        function insert(text) {
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            const val = editor.value;
+            editor.value = val.substring(0, start) + text + val.substring(end);
+            editor.selectionStart = editor.selectionEnd = start + text.length;
+            editor.focus();
+            updateUI();
+            editor.dispatchEvent(new Event('input'));
         }
 
         function saveFile() {
             const blob = new Blob([editor.value], { type: "text/html" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = "my-code.html";
+            a.download = "index.html";
             a.click();
         }
 
@@ -185,38 +414,9 @@
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function (e) {
-                editor.value = e.target.result;
-            };
+            reader.onload = function (e) { editor.value = e.target.result; updateUI(); };
             reader.readAsText(file);
         }
-
-        function copyAll() {
-            editor.select();
-            document.execCommand("copy");
-            alert("Code copied to clipboard!");
-        }
-
-        // Insert symbol at cursor position (Important for Textarea)
-        function insert(text) {
-            const start = editor.selectionStart;
-            const end = editor.selectionEnd;
-            const value = editor.value;
-            
-            editor.value = value.substring(0, start) + text + value.substring(end);
-            editor.selectionStart = editor.selectionEnd = start + text.length;
-            editor.focus();
-        }
-
-        // --- OFFLINE SERVICE WORKER REGISTRATION ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker Registered'))
-                    .catch(err => console.log('Error:', err));
-            });
-        }
     </script>
-
 </body>
 </html>
