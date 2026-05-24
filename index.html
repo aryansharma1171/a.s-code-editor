@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     <meta name="theme-color" content="#1e1e1e">
-    <title>A.S Code</title>
+    <title>A.S Code - Pro IDE</title>
     
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -14,10 +14,12 @@
             --bg: #1e1e1e;
             --sidebar: #252526;
             --accent: #007acc;
+            --accent-hover: #0062a3;
             --text: #cccccc;
             --border: #333;
             --console-bg: #111;
             --error: #f48771;
+            --toolbar-height: 46px;
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -25,7 +27,6 @@
         body, html {
             background-color: var(--bg); 
             color: var(--text);
-            /* FIX: 100dvh adapts to mobile browser bars dynamically */
             height: 100dvh; 
             width: 100%;
             margin: 0; 
@@ -50,16 +51,19 @@
         }
 
         .brand { font-weight: 700; color: #fff; font-size: 16px; letter-spacing: 0.5px; }
-        .toolbar-group { display: flex; gap: 5px; }
+        .toolbar-group { display: flex; gap: 5px; flex-wrap: nowrap; overflow-x: auto; }
 
         .btn {
             background: #333; color: #eee; border: 1px solid #444;
-            height: 34px; padding: 0 10px; font-size: 14px; cursor: pointer;
+            height: 34px; padding: 0 10px; font-size: 13px; cursor: pointer;
             border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            gap: 4px; transition: background 0.2s, transform 0.1s;
         }
         .btn:active { transform: scale(0.95); }
+        .btn:hover { background: #444; }
         .btn-primary { background-color: var(--accent); border-color: #005f9e; color: white; font-weight: bold; }
-        .btn-icon { width: 34px; padding: 0; font-size: 16px; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-icon { width: 34px; padding: 0; font-size: 15px; }
 
         /* --- SEARCH BAR --- */
         #searchBar {
@@ -80,17 +84,18 @@
         }
 
         .gutter {
-            width: 40px; 
+            width: 45px; 
             background: var(--bg); 
             color: #6e7681;
             text-align: right; 
-            padding: 10px 5px; 
+            padding: 10px 8px; 
             font-family: 'Fira Code', monospace;
-            font-size: 14px; 
+            font-size: 13px; 
             line-height: 1.5; 
             border-right: 1px solid var(--border);
             overflow: hidden;
             flex-shrink: 0;
+            user-select: none;
         }
 
         #editor {
@@ -100,7 +105,7 @@
             border: none; 
             padding: 10px; 
             font-family: 'Fira Code', monospace;
-            font-size: 14px; 
+            font-size: 13px; 
             line-height: 1.5; 
             resize: none; 
             white-space: pre;
@@ -109,61 +114,172 @@
             height: 100%;
         }
 
-        /* --- HELPER BAR (Fixed for Keyboard) --- */
+        /* --- HELPER BAR --- */
         .helper-bar {
             background: var(--sidebar); 
             padding: 8px 5px; 
             display: flex; 
-            gap: 8px;
+            gap: 6px;
             overflow-x: auto; 
             border-top: 1px solid var(--border); 
             flex-shrink: 0; 
             z-index: 20;
             width: 100%;
-            /* Ensure it sits above iOS home bar */
             padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
         
         .helper-btn {
-            background: #3e3e42; color: #fff; border: none; min-width: 45px; height: 40px;
-            border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 16px;
-            cursor: pointer;
+            background: #3e3e42; color: #fff; border: none; min-width: 42px; height: 38px;
+            border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 15px;
+            cursor: pointer; flex-shrink: 0;
         }
         .helper-btn:active { background: var(--accent); }
 
-        /* --- PREVIEW --- */
+        /* --- MODERN MULTI-DEVICE PREVIEW CONTAINER --- */
         #previewContainer {
             display: none; 
             position: fixed;
             top: 0; left: 0;
             width: 100vw; height: 100vh;
-            background: white;
+            background: #111112;
             flex-direction: column;
             z-index: 5000;
+            opacity: 0;
+            transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        #previewContainer.show { opacity: 1; display: flex; }
 
+        /* Preview Navigation Tabs */
         .preview-tabs {
-            background: #f0f0f0; display: flex; border-bottom: 1px solid #ccc; height: 45px; align-items: center;
+            background: var(--sidebar); display: flex; border-bottom: 1px solid var(--border); height: 45px; align-items: center; padding: 0 10px;
         }
         .tab-btn {
-            padding: 0 20px; height: 100%; border: none; background: transparent; 
-            font-weight: bold; cursor: pointer; color: #555; border-bottom: 3px solid transparent;
+            padding: 0 15px; height: 100%; border: none; background: transparent; 
+            font-weight: 600; cursor: pointer; color: #888; border-bottom: 3px solid transparent;
+            font-size: 13px; transition: color 0.2s, border-color 0.2s;
         }
-        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab-btn.active { color: #fff; border-bottom-color: var(--accent); }
         .close-btn { 
-            margin-left: auto; background: #ff4d4d; color: white; 
-            padding: 0 20px; height: 100%; cursor: pointer; border: none; font-weight: bold;
+            margin-left: auto; background: #e51400; color: white; 
+            padding: 0 16px; height: 32px; cursor: pointer; border: none; font-weight: bold;
+            border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 4px;
+        }
+        .close-btn:hover { background: #ff1a00; }
+
+        /* Device Manipulation Toolbar */
+        .device-toolbar {
+            background: #2d2d2d;
+            height: var(--toolbar-height);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .device-toolbar::-webkit-scrollbar { display: none; }
+        
+        .toolbar-select-wrapper { display: flex; align-items: center; background: #202020; border: 1px solid #444; border-radius: 4px; padding: 0 6px; }
+        .toolbar-select-wrapper select {
+            background: transparent; color: #eee; border: none; height: 28px; font-size: 12px; cursor: pointer; padding-right: 4px;
         }
 
-        #outputFrame { border: none; flex-grow: 1; width: 100%; background: white; display: block; }
+        .dev-btn {
+            background: #202020; color: #aaa; border: 1px solid #444;
+            height: 28px; padding: 0 10px; font-size: 12px; cursor: pointer;
+            border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;
+            transition: all 0.2s;
+        }
+        .dev-btn:hover { background: #3a3a3a; color: #fff; }
+        .dev-btn.active { background: var(--accent); color: white; border-color: #005f9e; }
+        .dev-btn-group { display: flex; background: #202020; border-radius: 4px; border: 1px solid #444; padding: 2px; }
+        .dev-btn-group .dev-btn { border: none; height: 24px; border-radius: 2px; }
+
+        .hud-label {
+            color: #888; font-family: 'Fira Code', monospace; font-size: 11px; margin-left: auto;
+            background: #1a1a1a; padding: 4px 8px; border-radius: 4px; border: 1px solid #3c3c3c;
+        }
+
+        /* Canvas Window Setup */
+        .preview-viewport-area {
+            flex-grow: 1;
+            position: relative;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: radial-gradient(circle, #222225 10%, #111112 90%);
+        }
+
+        /* Pixel Ruler Cross-Overlay */
+        .ruler-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; opacity: 0.15; display: none;
+            background-image: linear-gradient(to right, #888 1px, transparent 1px), linear-gradient(to bottom, #888 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .ruler-overlay.active { display: block; }
+
+        /* The simulated adaptive device window frame structure */
+        .device-frame-wrapper {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center center;
+            box-shadow: 0 25px 65px rgba(0,0,0,0.7);
+            background: #000;
+            border: 0px solid #2d2d2d;
+            border-radius: 0px;
+            display: flex;
+            flex-direction: column;
+            max-width: 100%;
+        }
+
+        /* Simulated Mobile Hardware Framing Attributes */
+        .device-frame-wrapper.phone-chassis {
+            border: 12px solid #2d2d30;
+            border-radius: 36px;
+            padding: 0;
+        }
+        .device-frame-wrapper.phone-chassis::before {
+            content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+            width: 120px; height: 16px; background: #2d2d30; border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px; z-index: 5001; display: none;
+        }
+        .device-frame-wrapper.phone-chassis.apple-notch::before { display: block; }
+
+        .device-status-bar {
+            height: 24px; background: #000; font-size: 11px; color: #fff;
+            display: none; align-items: center; justify-content: space-between; padding: 0 24px;
+            font-family: inherit; font-weight: 500; select: none;
+        }
+        .device-frame-wrapper.phone-chassis .device-status-bar { display: flex; }
+
+        /* The Frame Box Content Viewport */
+        .iframe-container {
+            width: 100%; height: 100%; position: relative; flex-grow: 1; overflow: hidden;
+            background: #fff; border-radius: inherit;
+        }
+
+        #outputFrame { border: none; width: 100%; height: 100%; background: white; display: block; }
         
+        .frame-loader-shield {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(30,30,30,0.8); display: flex; align-items: center;
+            justify-content: center; z-index: 100; opacity: 0; pointer-events: none;
+            transition: opacity 0.15s ease; color: white; font-size: 13px; font-weight: 500;
+        }
+        .frame-loader-shield.loading { opacity: 1; pointer-events: auto; }
+
         #consoleArea {
             display: none; flex-grow: 1; background: var(--console-bg); 
-            color: #ddd; padding: 10px; font-family: 'Fira Code', monospace; 
+            color: #ddd; padding: 15px; font-family: 'Fira Code', monospace; 
             font-size: 13px; overflow-y: auto;
         }
-        .log-msg { padding: 5px 0; border-bottom: 1px solid #333; }
-        .log-error { color: var(--error); }
+        .log-msg { padding: 6px 0; border-bottom: 1px solid #222; line-height: 1.4; }
+        .log-error { color: var(--error); background: rgba(244,135,113,0.05); }
         .log-info { color: #4fc1ff; }
 
         /* --- MODALS --- */
@@ -182,7 +298,7 @@
 <body>
 
     <header>
-        <div class="brand">A.S Code</div>
+        <div class="brand">A.S Code <span style="font-size:10px; color:var(--accent); vertical-align:super;">PRO</span></div>
         <div class="toolbar-group">
             <button class="btn btn-icon" onclick="contactUs()" title="Contact Us">📧</button>
             <button class="btn btn-icon" onclick="openSnippets()" title="Snippets">⚡</button>
@@ -190,7 +306,7 @@
             <button class="btn btn-icon" onclick="toggleSearch()" title="Search">🔍</button>
             <button class="btn btn-icon" onclick="document.getElementById('colorPickerInput').click()" title="Color Picker">🎨</button>
             <button class="btn btn-icon" onclick="location.reload()" title="Refresh Page">🔄</button>
-            <button class="btn btn-primary" onclick="toggleRun()">▶ RUN</button>
+            <button class="btn btn-primary" onclick="toggleRun()">📱 DEVICE PREVIEW</button>
             <button class="btn btn-icon" onclick="saveFile()" title="Save">💾</button>
             <button class="btn btn-icon" onclick="document.getElementById('fileInput').click()" title="Open">📂</button>
         </div>
@@ -212,7 +328,7 @@
         <button class="helper-btn" onclick="insert('>')">&gt;</button>
         <button class="helper-btn" onclick="insert('/')">/</button>
         <button class="helper-btn" onclick="insert('=')">=</button>
-        <button class="helper-btn" onclick="insert('"')">"</button>
+        <button class="helper-btn" onclick="insert('\"')">"</button>
         <button class="helper-btn" onclick="insert(';')">;</button>
         <button class="helper-btn" onclick="insert('{')">{</button>
         <button class="helper-btn" onclick="insert('}')">}</button>
@@ -222,14 +338,58 @@
         <button class="helper-btn" onclick="insert('px')">px</button>
     </div>
 
+    <!-- ADVANCED SIMULATION PREVIEW COMPLEX CONTAINER -->
     <div id="previewContainer">
         <div class="preview-tabs">
-            <button class="tab-btn active" onclick="switchTab('result')">🌐 Result</button>
-            <button class="tab-btn" onclick="switchTab('console')">🐞 Console</button>
-            <button class="close-btn" onclick="toggleRun()">✖ CLOSE</button>
+            <button id="tabResBtn" class="tab-btn active" onclick="switchTab('result')">🌐 Live Output</button>
+            <button id="tabConBtn" class="tab-btn" onclick="switchTab('console')">🐞 Console Logs</button>
+            <button class="close-btn" onclick="toggleRun()">✖ CLOSE PREVIEW</button>
         </div>
-        <iframe id="outputFrame"></iframe>
-        <div id="consoleArea"></div>
+
+        <!-- Dynamic Chrome DevTools-style Control Strip -->
+        <div class="device-toolbar" id="devToolbar">
+            <div class="toolbar-select-wrapper">
+                <select id="devicePresetSelect" onchange="handlePresetChange(this.value)">
+                    <option value="responsive">💻 Desktop (Fluid)</option>
+                    <option value="android">📱 Android Mobile (360x740)</option>
+                    <option value="iphone">🍎 iPhone 13/14 Pro (390x844)</option>
+                    <option value="tablet">📲 Apple iPad Tablet (768x1024)</option>
+                </select>
+            </div>
+
+            <button class="dev-btn" id="rotateBtn" onclick="toggleOrientation()" title="Rotate Aspect Orientation">🔄 Rotate</button>
+            
+            <div class="dev-btn-group">
+                <button class="dev-btn" onclick="adjustZoom(-0.1)" title="Zoom Out">-</button>
+                <button class="dev-btn" id="zoomLabelBtn" style="min-width:50px; pointer-events:none;">100%</button>
+                <button class="dev-btn" onclick="adjustZoom(0.1)" title="Zoom In">+</button>
+            </div>
+
+            <button class="dev-btn" onclick="toggleRuler()" title="Toggle Pixel Alignment Grids">📏 Ruler</button>
+            <button class="dev-btn" onclick="refreshPreviewTarget()" title="Hard Reload Code Instance">🔄 Reload</button>
+            <button class="dev-btn" id="fullscreenBtn" onclick="toggleFullscreenPreview()" title="True Frame Fullscreen Container">📺 Fullscreen</button>
+            
+            <div class="hud-label" id="dimensionHUD">Responsive: 100% × 100%</div>
+        </div>
+
+        <div class="preview-viewport-area">
+            <div class="ruler-overlay" id="rulerOverlay"></div>
+            
+            <!-- Realistically scaled hardware bounding matrix frame -->
+            <div class="device-frame-wrapper" id="deviceFrameWrapper">
+                <div class="device-status-bar">
+                    <span id="statusTime">09:41</span>
+                    <span style="letter-spacing: 1px;">📶 🪫</span>
+                </div>
+                <div class="iframe-container">
+                    <div class="frame-loader-shield" id="frameShield">Compiling Render Engine...</div>
+                    <iframe id="outputFrame"></iframe>
+                </div>
+            </div>
+
+            <!-- Standalone console window map target -->
+            <div id="consoleArea"></div>
+        </div>
     </div>
 
     <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
@@ -274,11 +434,34 @@
         const previewContainer = document.getElementById("previewContainer");
         const frame = document.getElementById("outputFrame");
         const consoleArea = document.getElementById("consoleArea");
+        
+        // Extended Responsive Preview State Systems
+        const deviceWrapper = document.getElementById("deviceFrameWrapper");
+        const dimensionHUD = document.getElementById("dimensionHUD");
+        const zoomLabelBtn = document.getElementById("zoomLabelBtn");
+        const frameShield = document.getElementById("frameShield");
+        const rulerOverlay = document.getElementById("rulerOverlay");
+        const deviceSelect = document.getElementById("devicePresetSelect");
+        const devToolbar = document.getElementById("devToolbar");
+
+        let currentDevice = 'responsive';
+        let isLandscape = false;
+        let zoomScale = 1.0;
+        let isFullscreenMode = false;
+
+        const deviceMetrics = {
+            responsive: { width: "100%", height: "100%", name: "Desktop (Fluid)" },
+            android: { width: 360, height: 740, name: "Android Mobile" },
+            iphone: { width: 390, height: 844, name: "iPhone 14 Pro" },
+            tablet: { width: 768, height: 1024, name: "Apple iPad" }
+        };
 
         window.onload = function() {
             const saved = localStorage.getItem("as-code-fixed");
             if (saved) editor.value = saved;
             updateUI();
+            updateClock();
+            setInterval(updateClock, 60000);
         };
 
         editor.addEventListener("input", () => {
@@ -286,13 +469,20 @@
             localStorage.setItem("as-code-fixed", editor.value);
         });
 
-        // Sync Scroll
         editor.addEventListener("scroll", () => { gutter.scrollTop = editor.scrollTop; });
         editor.addEventListener("keydown", (e) => { if (e.key === "Tab") { e.preventDefault(); insert("    "); } });
 
         function updateUI() {
             const lines = editor.value.split("\n").length;
             gutter.innerHTML = Array(lines).fill(0).map((_, i) => i + 1).join("<br>");
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeSpan = document.getElementById("statusTime");
+            if(timeSpan) {
+                timeSpan.textContent = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            }
         }
 
         // --- CONTACT ---
@@ -319,26 +509,42 @@
             document.getElementById("contactModal").style.display = "none";
         }
 
-        // --- RUN ---
+        // --- CORE RUN & ENGINE ROUTINES ---
         function toggleRun() {
-            if (previewContainer.style.display === "flex") {
-                previewContainer.style.display = "none";
+            if (previewContainer.classList.contains("show")) {
+                previewContainer.classList.remove("show");
+                setTimeout(() => { previewContainer.style.display = "none"; }, 250);
             } else {
                 previewContainer.style.display = "flex";
+                // Force browser reflow parse
+                previewContainer.offsetHeight;
+                previewContainer.classList.add("show");
+                setPreviewDevice(currentDevice);
                 runCode();
             }
         }
+
         function runCode() {
             consoleArea.innerHTML = "";
+            frameShield.classList.add("loading");
+            
             const code = editor.value;
             const consoleScript = `<script>
                     window.onerror = function(msg, url, line) { window.parent.postMessage({type: 'error', msg: msg + " (Line " + line + ")"}, '*'); };
                     const originalLog = console.log;
                     console.log = function(...args) { originalLog.apply(console, args); window.parent.postMessage({type: 'log', msg: args.join(" ")}, '*'); };
                 <\/script>`;
-            frame.contentWindow.document.open();
-            frame.contentWindow.document.write(consoleScript + code);
-            frame.contentWindow.document.close();
+                
+            setTimeout(() => {
+                frame.contentWindow.document.open();
+                frame.contentWindow.document.write(consoleScript + code);
+                frame.contentWindow.document.close();
+                frameShield.classList.remove("loading");
+            }, 300);
+        }
+
+        function refreshPreviewTarget() {
+            runCode();
         }
 
         window.addEventListener('message', function(e) {
@@ -354,19 +560,113 @@
         });
 
         function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-            if (tab === 'result') { frame.style.display = 'block'; consoleArea.style.display = 'none'; }
-            else { frame.style.display = 'none'; consoleArea.style.display = 'block'; }
+            document.getElementById('tabResBtn').classList.remove('active');
+            document.getElementById('tabConBtn').classList.remove('active');
+            
+            if (tab === 'result') {
+                document.getElementById('tabResBtn').classList.add('active');
+                deviceWrapper.style.display = 'flex';
+                devToolbar.style.display = 'flex';
+                consoleArea.style.display = 'none';
+            } else {
+                document.getElementById('tabConBtn').classList.add('active');
+                deviceWrapper.style.display = 'none';
+                devToolbar.style.display = 'none';
+                consoleArea.style.display = 'block';
+            }
+        }
+
+        // --- MODERN MULTI-DEVICE IMPLEMENTATION ENGINE ---
+        function handlePresetChange(val) {
+            setPreviewDevice(val);
+        }
+
+        function setPreviewDevice(device) {
+            currentDevice = device;
+            deviceSelect.value = device;
+            
+            // Wipe standard adaptive framing defaults initially
+            deviceWrapper.className = "device-frame-wrapper";
+            
+            if (device === 'responsive') {
+                updatePreviewSize("100%", "100%");
+            } else {
+                deviceWrapper.classList.add("phone-chassis");
+                if (device === 'iphone') {
+                    deviceWrapper.classList.add("apple-notch");
+                }
+                
+                const metric = deviceMetrics[device];
+                let targetWidth = isLandscape ? metric.height : metric.width;
+                let targetHeight = isLandscape ? metric.width : metric.height;
+                
+                updatePreviewSize(targetWidth, targetHeight);
+            }
+        }
+
+        function updatePreviewSize(width, height) {
+            const suffix = (typeof width === 'number') ? 'px' : '';
+            deviceWrapper.style.width = width + suffix;
+            deviceWrapper.style.height = height + suffix;
+            
+            // HUD Real-time Display Rendering Updates
+            const labelName = deviceMetrics[currentDevice].name;
+            const computedW = (width === "100%") ? deviceWrapper.clientWidth : width;
+            const computedH = (height === "100%") ? deviceWrapper.clientHeight : height;
+            
+            dimensionHUD.textContent = `${labelName}: ${computedW}px × ${computedH}px`;
+            applyTransformationMatrix();
+        }
+
+        function toggleOrientation() {
+            if (currentDevice === 'responsive') return;
+            isLandscape = !isLandscape;
+            setPreviewDevice(currentDevice);
+        }
+
+        function adjustZoom(delta) {
+            zoomScale = Math.max(0.3, Math.min(2.0, zoomScale + delta));
+            zoomLabelBtn.textContent = Math.round(zoomScale * 100) + "%";
+            applyTransformationMatrix();
+        }
+
+        function applyTransformationMatrix() {
+            deviceWrapper.style.transform = `scale(${zoomScale})`;
+        }
+
+        function toggleRuler() {
+            rulerOverlay.classList.toggle("active");
+        }
+
+        function toggleFullscreenPreview() {
+            isFullscreenMode = !isFullscreenMode;
+            const fsBtn = document.getElementById("fullscreenBtn");
+            
+            if (isFullscreenMode) {
+                fsBtn.classList.add("active");
+                devToolbar.style.position = "absolute";
+                devToolbar.style.top = "0";
+                devToolbar.style.left = "0";
+                devToolbar.style.width = "100%";
+                devToolbar.style.zIndex = "6000";
+                devToolbar.style.background = "rgba(45,45,45,0.95)";
+                setPreviewDevice('responsive');
+            } else {
+                fsBtn.classList.remove("active");
+                devToolbar.style.position = "static";
+                devToolbar.style.width = "100%";
+                setPreviewDevice(deviceSelect.value);
+            }
         }
         
+        // --- SNIPPETS EXTENSION ---
         const snippets = {
-            html: `<!DOCTYPE html>\n<html>\n<head>\n<style>\n  body{ padding:20px; font-family:sans-serif; }\n</style>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>`,
+            html: `<!DOCTYPE html>\n<html>\n<head>\n<style>\n  body{ padding:20px; font-family:sans-serif; background:#f9f9f9; color:#333; }\n</style>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>`,
             css: `* { margin:0; box-sizing:border-box; }`,
-            nav: `<nav style="background:#333; color:white; padding:10px;">Menu</nav>`,
-            card: `<div style="border:1px solid #ddd; padding:10px; border-radius:5px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">\n  <h3>Title</h3>\n  <p>Content...</p>\n</div>`,
-            btn: `<button style="background:#007acc; color:white; padding:8px 16px; border:none; border-radius:4px;">Click Me</button>`,
-            js: `<script>\n  console.log('App Ready');\n<\/script>`
+            nav: `<nav style="background:#333; color:white; padding:15px; display:flex; justify-content:space-between; font-family:sans-serif;">\n  <b>Logo</b>\n  <div>Home • About</div>\n</nav>`,
+            card: `<div style="border:1px solid #ddd; padding:20px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.05); font-family:sans-serif; max-width:300px; background:white;">\n  <h3 style="margin-top:0;">Premium Card UI</h3>\n  <p style="color:#666; font-size:14px;">This layout architecture automatically conforms to device scaling vectors seamlessly.</p>\n</div>`,
+            btn: `<button style="background:#007acc; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#0062a3'" onmouseout="this.style.background='#007acc'">Interact</button>`,
+            js: `<script>\n  console.log('App Core Initialization Process Complete.');\n<\/script>`
         };
         function insertSnippet(k) { insert(snippets[k]); closeAllModals(); }
 
