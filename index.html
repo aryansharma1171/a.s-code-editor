@@ -139,20 +139,6 @@
 
         .btn-icon { width: 38px; padding: 0; font-size: 16px; }
 
-        /* --- SEARCH BAR --- */
-        #searchBar {
-            display: none; background: #252526; padding: 10px;
-            border-bottom: 1px solid var(--border); justify-content: center; gap: 8px;
-            flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        #searchInput { 
-            background: #1e1e1e; border: 1px solid #444; color: white; 
-            padding: 8px 12px; border-radius: 6px; width: 100%; max-width: 400px;
-            font-size: 16px; /* Prevents iOS auto-zoom */
-            transition: border-color 0.2s;
-        }
-        #searchInput:focus { border-color: var(--accent); }
-
         /* --- WORKSPACE --- */
         .workspace { 
             display: flex; 
@@ -388,8 +374,6 @@
         }
         .modal.show { transform: translate(-50%, -50%) scale(1); }
         
-        .snippet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        
         .snippet-btn { 
             background: #2d2d30; color: #e0e0e0; border: 1px solid #444; 
             padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; 
@@ -404,8 +388,6 @@
             opacity: 0; transition: opacity 0.2s ease;
         }
         .overlay.show { opacity: 1; }
-        
-        #colorPickerInput { visibility: hidden; width: 0; height: 0; position: absolute; }
 
         /* --- USER MANUAL MODAL EXTENSION (PREMIUM DESIGN) --- */
         #manualModal {
@@ -580,9 +562,6 @@
             #editor { font-size: 13px; }
             .preview-viewport-area { padding: 10px; }
             .hud-label { display: none; }
-            .snippet-grid { grid-template-columns: 1fr; }
-            #searchBar { flex-wrap: wrap; }
-            #searchInput { width: 100%; }
             .manual-card-grid { grid-template-columns: 1fr; }
             #manualModal { height: 90vh; max-height: none; }
         }
@@ -596,22 +575,12 @@
             <button class="btn btn-pro" onclick="window.open('https://aryansharma1171.github.io/A.S-Code-Studio-/', '_blank')" title="Launch A.S Code Pro">🚀 Code Pro</button>
             <button class="btn btn-icon" onclick="openManual()" title="User Manual">📘</button>
             <button class="btn btn-icon" onclick="contactUs()" title="Contact Us">📧</button>
-            <button class="btn btn-icon" onclick="openSnippets()" title="Snippets">⚡</button>
-            <button class="btn btn-icon" onclick="document.execCommand('undo')" title="Undo">↩️</button>
-            <button class="btn btn-icon" onclick="toggleSearch()" title="Search Editor">🔍</button>
-            <button class="btn btn-icon" onclick="document.getElementById('colorPickerInput').click()" title="Color Picker">🎨</button>
             <button class="btn btn-icon" onclick="location.reload()" title="Refresh Page">🔄</button>
             <button class="btn btn-primary" onclick="toggleRun()">📱 PREVIEW</button>
             <button class="btn btn-icon" onclick="saveFile()" title="Save App Code">💾</button>
             <button class="btn btn-icon" onclick="document.getElementById('fileInput').click()" title="Open Document">📂</button>
         </div>
     </header>
-
-    <div id="searchBar">
-        <input type="text" id="searchInput" placeholder="Find text...">
-        <button class="btn btn-primary" onclick="findText()">Find</button>
-        <button class="btn" onclick="toggleSearch()">✖</button>
-    </div>
 
     <div class="workspace" id="workspace">
         <div class="gutter touch-scroll" id="gutter">1</div>
@@ -685,19 +654,6 @@
 
     <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
 
-    <div class="modal" id="templateModal">
-        <h3 style="color:white; margin:0 0 15px 0;">Insert Template</h3>
-        <div class="snippet-grid">
-            <button class="snippet-btn" onclick="insertSnippet('html')">🌐 HTML5 Base</button>
-            <button class="snippet-btn" onclick="insertSnippet('css')">🎨 CSS Reset</button>
-            <button class="snippet-btn" onclick="insertSnippet('nav')">🗺️ Navbar</button>
-            <button class="snippet-btn" onclick="insertSnippet('card')">🃏 Card UI</button>
-            <button class="snippet-btn" onclick="insertSnippet('btn')">🔘 Button</button>
-            <button class="snippet-btn" onclick="insertSnippet('js')">⚙️ JS Script</button>
-        </div>
-        <button class="snippet-btn" onclick="closeAllModals()" style="margin-top:15px; width:100%; text-align:center; background:#444; color:white; border:none; font-weight:bold;">Cancel</button>
-    </div>
-
     <div class="modal" id="contactModal">
         <h3 style="color:white; margin:0 0 15px 0;">📧 Contact Support</h3>
         <div style="background:#1e1e1e; padding:15px; border:1px solid #444; border-radius:6px; margin-bottom:15px; color:#fff; word-break: break-all; text-align:center; font-family:'Fira Code', monospace; font-size: 15px;">
@@ -735,7 +691,6 @@
     </div>
 
     <input type="file" id="fileInput" accept=".html,.txt,.js,.css" onchange="loadFile(event)" style="display:none;">
-    <input type="color" id="colorPickerInput" onchange="insertColor(this)">
 
     <script>
         // --- SERVICE WORKER REGISTRATION ---
@@ -781,10 +736,6 @@
             { id: "save", title: "Save Document", desc: "Compiles buffer text into a raw structured system blob, downloading direct standalone files instantly.", icon: "💾", cat: "files" },
             { id: "open", title: "Upload / Open File", desc: "Parses system drive storage contents directly into local storage buffer arrays for real-time adjustments.", icon: "📂", cat: "files" },
             { id: "preview", title: "Adaptive Preview Engine", desc: "Launches virtual multi-device environments parsing engine script allocations in simulated frames.", icon: "📱", cat: "preview" },
-            { id: "search", title: "Workspace Search Finder", desc: "Scans working lines via standard pointer indices to snap onto matched text instantly.", icon: "🔍", cat: "editor" },
-            { id: "color", title: "HEX Color Canvas Picker", desc: "Launches interactive native color hardware arrays rendering matching hex formatting directly into lines.", icon: "🎨", cat: "editor" },
-            { id: "snippets", title: "Dynamic Code Templates", desc: "Injects complete valid design markup arrays like CSS blocks, responsive cards, or navigation directly.", icon: "⚡", cat: "editor" },
-            { id: "undo", title: "Buffer State Rollback", desc: "Triggers immediate text mutation rollbacks to fix typographical issues or layout steps.", icon: "↩️", cat: "editor" },
             { id: "contact", title: "Contact Support Channel", desc: "Pulls terminal support communication panels tracking core service networks easily.", icon: "📧", cat: "tools" },
             { id: "rotate", title: "Chassis Aspect Rotation", desc: "Swaps device horizontal and vertical frame viewports instantly to check media constraints.", icon: "🔄", cat: "preview" },
             { id: "zoom", title: "Viewport Scale Matrix", desc: "Scales targeted chassis layouts dynamically from 30% to 200% via matrix transform bindings.", icon: "🔍", cat: "preview" },
@@ -861,10 +812,6 @@
             modal.classList.add("show");
             document.body.classList.add("modal-open");
         }
-        
-        function openSnippets() { 
-            openModal("templateModal");
-        }
 
         function openManual() {
             document.getElementById("manualSearchInput").value = "";
@@ -920,7 +867,10 @@
                     `;
                     grid.appendChild(card);
                 });
-                container.appendChild(section);
+                // Only append section if it has items
+                if(items.length > 0) {
+                    container.appendChild(section);
+                }
             }
 
             const tips = document.createElement("div");
@@ -1140,33 +1090,6 @@
                 devToolbar.style.backdropFilter = "none";
                 setPreviewDevice(deviceSelect.value);
             }
-        }
-        
-        // --- SNIPPETS EXTENSION ---
-        const snippets = {
-            html: `<!DOCTYPE html>\n<html>\n<head>\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<style>\n  body{ padding:20px; font-family:sans-serif; background:#f9f9f9; color:#333; }\n</style>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>`,
-            css: `* { margin:0; padding:0; box-sizing:border-box; }`,
-            nav: `<nav style="background:#333; color:white; padding:15px; display:flex; justify-content:space-between; font-family:sans-serif;">\n  <b>Logo</b>\n  <div>Home • About</div>\n</nav>`,
-            card: `<div style="border:1px solid #ddd; padding:20px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.05); font-family:sans-serif; max-width:100%; background:white;">\n  <h3 style="margin-top:0;">Premium Card UI</h3>\n  <p style="color:#666; font-size:14px;">This layout architecture automatically conforms to device scaling vectors seamlessly.</p>\n</div>`,
-            btn: `<button style="background:#007acc; color:white; padding:12px 24px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#0062a3'" onmouseout="this.style.background='#007acc'">Interact</button>`,
-            js: `<script>\n  console.log('App Core Initialization Process Complete.');\n<\/script>`
-        };
-        function insertSnippet(k) { insert(snippets[k]); closeAllModals(); }
-
-        function insertColor(input) { insert(input.value); }
-
-        function toggleSearch() {
-            const bar = document.getElementById("searchBar");
-            bar.style.display = bar.style.display === "flex" ? "none" : "flex";
-            if(bar.style.display === "flex") document.getElementById("searchInput").focus();
-        }
-
-        function findText() {
-            const query = document.getElementById("searchInput").value;
-            if (!query) return;
-            const index = editor.value.indexOf(query, editor.selectionEnd);
-            if (index !== -1) { editor.focus(); editor.setSelectionRange(index, index + query.length); }
-            else { alert("Not found"); }
         }
 
         function insert(text) {
