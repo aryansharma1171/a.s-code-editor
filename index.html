@@ -80,6 +80,14 @@
             white-space: nowrap;
         }
 
+        .brand-logo {
+            height: 28px;
+            width: 28px;
+            margin-right: 8px;
+            border-radius: 4px;
+            object-fit: contain;
+        }
+
         .mobile-badge {
             background: linear-gradient(135deg, var(--accent), #005f9e);
             color: white;
@@ -520,7 +528,10 @@
 <body>
 
     <header>
-        <div class="brand">A.S Code <span class="mobile-badge">Mobile</span></div>
+        <div class="brand">
+            <img src="https://raw.githubusercontent.com/aryansharma1171/webimages/main/A.S%20Main%20Logo.png" alt="A.S Logo" class="brand-logo">
+            A.S Code <span class="mobile-badge">Mobile</span>
+        </div>
         <div class="toolbar-group touch-scroll">
             <button class="btn btn-pro" onclick="window.open('https://aryansharma1171.github.io/A.S-Code-Studio-/', '_blank')" title="Launch A.S Code Pro">🚀 Code Pro</button>
             <button class="btn btn-icon" onclick="openManual()" title="User Manual">📘</button>
